@@ -211,19 +211,3 @@
 	</div>
 </div>
 
-<style>
-	/* Faint separators between rows for easier visual scanning.
-	   Targets the existing "py-0.5 + justify-between" row pattern used
-	   throughout the per-tab Settings components — no per-component edits
-	   needed. */
-	:global(.settings-page [class~='py-0.5'][class~='justify-between']) {
-		border-bottom: 1px solid rgb(229 231 235 / 0.7);
-		padding-block: 0.6rem;
-	}
-	:global(.dark .settings-page [class~='py-0.5'][class~='justify-between']) {
-		border-color: rgb(31 41 55 / 0.5);
-	}
-	:global(.settings-page h1) {
-		margin-top: 0.75rem;
-	}
-</style>

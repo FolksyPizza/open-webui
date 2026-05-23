@@ -285,13 +285,13 @@
 	});
 </script>
 
-<div class="flex flex-col lg:flex-row w-full h-full pb-2 lg:space-x-4">
+<div class="settings-page flex flex-col lg:flex-row w-full h-full pb-2 lg:space-x-6 px-3 md:px-6">
 	<div
 		id="admin-settings-tabs-container"
-		class="tabs mx-[16px] lg:mx-0 lg:px-[16px] flex flex-row overflow-x-auto gap-2.5 max-w-full lg:gap-1 lg:flex-col lg:flex-none lg:w-50 dark:text-gray-200 text-sm font-medium text-left scrollbar-none"
+		class="tabs flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto lg:w-60 lg:flex-none shrink-0 dark:text-gray-200 text-sm text-left scrollbar-none"
 	>
 		<div
-			class="hidden lg:flex w-full rounded-full px-2.5 gap-2 bg-gray-100/80 dark:bg-gray-850/80 backdrop-blur-2xl my-1 -mx-1 mt-1.5"
+			class="hidden lg:flex w-full rounded-full px-2.5 gap-2 bg-gray-100/80 dark:bg-gray-850/80 backdrop-blur-2xl my-1 mb-1.5"
 			id="settings-search"
 		>
 			<div class="self-center rounded-l-xl bg-transparent">
@@ -325,10 +325,10 @@
 				id={tab.id}
 				href={tab.route}
 				draggable="false"
-				class="px-0.5 py-1 min-w-fit rounded-lg flex-1 lg:flex-none flex text-right transition select-none {selectedTab ===
+				class="px-2.5 py-1.5 min-w-fit rounded-xl flex items-center text-left transition select-none {selectedTab ===
 				tab.id
-					? ''
-					: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
+					? 'bg-gray-100 dark:bg-gray-850/50'
+					: 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white'}"
 			>
 				<div class=" self-center mr-2">
 					{#if tab.id === 'general'}

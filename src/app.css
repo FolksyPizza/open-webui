@@ -256,6 +256,21 @@ select {
 	animation: fade-in-token 100ms ease-out;
 }
 
+/* Settings surfaces (/settings and /admin/settings) — faint row
+   separators on each setting row. Targets the existing
+   `py-0.5 + justify-between` pattern used throughout the per-tab
+   Settings components so no per-component edits are needed. */
+.settings-page [class~='py-0.5'][class~='justify-between'] {
+	border-bottom: 1px solid rgb(229 231 235 / 0.7);
+	padding-block: 0.6rem;
+}
+.dark .settings-page [class~='py-0.5'][class~='justify-between'] {
+	border-color: rgb(31 41 55 / 0.5);
+}
+.settings-page h1 {
+	margin-top: 0.75rem;
+}
+
 .katex-mathml {
 	display: none;
 }

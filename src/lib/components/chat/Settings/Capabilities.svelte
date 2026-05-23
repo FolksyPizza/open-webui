@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
-	import { settings } from '$lib/stores';
+	import { config, settings, user } from '$lib/stores';
 	import Switch from '$lib/components/common/Switch.svelte';
+	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import ManageModal from './Personalization/ManageModal.svelte';
 
 	const i18n = getContext('i18n');
@@ -65,14 +66,55 @@
 		}
 	];
 
+	// A capability is "available" when both the admin-level feature flag
+	// and the user-level permission allow it. If either is off, the
+	// toggle is greyed out and locked in the user UI — the admin panel
+	// is the only place to re-enable it.
+	$: availability = ((): Record<CapabilityKey, { allowed: boolean; reason?: string }> => {
+		const perms = ($user as any)?.permissions?.features ?? {};
+		const cfg = $config?.features ?? ({} as any);
+		const isAdmin = $user?.role === 'admin';
+		const adminOn = (v: any) => v === undefined || !!v;
+		const permOn = (v: any) => v === undefined || !!v;
+
+		const check = (
+			feature: string,
+			adminFlag: boolean,
+			permFlag: boolean
+		): { allowed: boolean; reason?: string } => {
+			if (isAdmin) return { allowed: true };
+			if (!adminFlag) {
+				return { allowed: false, reason: `${feature} is disabled by your admin.` };
+			}
+			if (!permFlag) {
+				return { allowed: false, reason: `${feature} isn't enabled for your account.` };
+			}
+			return { allowed: true };
+		};
+
+		return {
+			memory: check('Memory', adminOn(cfg.enable_memories), permOn(perms.memories)),
+			web_search: check('Web search', adminOn(cfg.enable_web_search), permOn(perms.web_search)),
+			code_execution_and_files: check(
+				'Code execution',
+				true, // no $config.features flag for code interpreter
+				permOn(perms.code_interpreter)
+			),
+			image_generation: check(
+				'Image generation',
+				adminOn(cfg.enable_image_generation),
+				permOn(perms.image_generation)
+			),
+			calendar: check('Calendar', true, permOn(perms.calendar)),
+			canvas: { allowed: true }
+		};
+	})();
+
 	let capabilities: Record<CapabilityKey, boolean> = { ...DEFAULTS };
 	let toolLoadingMode: ToolLoadingMode = 'auto';
 	let showManageMemory = false;
 
 	const persist = () => {
-		// Persist top-level capabilities map and a couple of legacy flags
-		// (settings.memory) so existing code paths keep working until Phase 2
-		// migrates them to read from settings.capabilities directly.
 		saveSettings({
 			capabilities: { ...capabilities },
 			toolLoadingMode,
@@ -81,6 +123,7 @@
 	};
 
 	const toggle = (key: CapabilityKey, next: boolean) => {
+		if (!availability[key].allowed) return; // hard guard
 		capabilities[key] = next;
 		persist();
 	};
@@ -99,7 +142,7 @@
 <ManageModal bind:show={showManageMemory} />
 
 <div class="flex flex-col h-full text-sm">
-	<div class="overflow-y-auto pr-1.5">
+	<div class="overflow-y-auto pr-2">
 		<div>
 			<h1 class="mb-1 text-sm font-medium">{$i18n.t('Capabilities')}</h1>
 
@@ -111,36 +154,65 @@
 
 			<div class="flex flex-col">
 				{#each ITEMS as item (item.key)}
+					{@const avail = availability[item.key]}
 					<div>
 						<div class="py-0.5 flex w-full justify-between gap-3 items-start">
 							<div class="flex-1 min-w-0">
-								<div id="cap-{item.key}-label" class="text-xs font-medium">
+								<div
+									id="cap-{item.key}-label"
+									class="text-xs font-medium {!avail.allowed ? 'text-gray-400 dark:text-gray-500' : ''}"
+								>
 									{$i18n.t(item.title)}
+									{#if !avail.allowed}
+										<span
+											class="ml-1 text-[0.65rem] font-medium uppercase px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+										>
+											{$i18n.t('Disabled')}
+										</span>
+									{/if}
 								</div>
-								<div class="text-xs text-gray-500 mt-0.5">
+								<div
+									class="text-xs mt-0.5 {!avail.allowed ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500'}"
+								>
 									{$i18n.t(item.description)}
 								</div>
+								{#if !avail.allowed && avail.reason}
+									<div class="text-xs mt-1 text-gray-400 dark:text-gray-500 italic">
+										{$i18n.t(avail.reason)}
+									</div>
+								{/if}
 
-								{#if item.key === 'memory' && capabilities.memory}
+								{#if item.key === 'memory' && capabilities.memory && avail.allowed}
 									<div class="mt-2">
 										<button
 											type="button"
 											class="px-3 py-1 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 outline outline-1 outline-gray-200 dark:outline-gray-800 rounded-full"
 											on:click={() => (showManageMemory = true)}
 										>
-											{$i18n.t('Manage memories')}
+											{$i18n.t('View memory')}
 										</button>
 									</div>
 								{/if}
 							</div>
 
 							<div class="flex items-center gap-2 p-1 shrink-0">
-								<Switch
-									ariaLabelledbyId="cap-{item.key}-label"
-									tooltip={true}
-									state={capabilities[item.key]}
-									on:change={(e) => toggle(item.key, e.detail)}
-								/>
+								{#if avail.allowed}
+									<Switch
+										ariaLabelledbyId="cap-{item.key}-label"
+										tooltip={true}
+										state={capabilities[item.key]}
+										on:change={(e) => toggle(item.key, e.detail)}
+									/>
+								{:else}
+									<Tooltip content={$i18n.t(avail.reason ?? '')} placement="left">
+										<div class="opacity-40 pointer-events-none" aria-disabled="true">
+											<Switch
+												ariaLabelledbyId="cap-{item.key}-label"
+												state={false}
+											/>
+										</div>
+									</Tooltip>
+								{/if}
 							</div>
 						</div>
 					</div>
