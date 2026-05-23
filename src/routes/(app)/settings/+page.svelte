@@ -113,7 +113,7 @@
 	<title>{$i18n.t('Settings')} | Open WebUI</title>
 </svelte:head>
 
-<div class="flex flex-col h-screen max-h-[100dvh] overflow-hidden text-gray-700 dark:text-gray-100">
+<div class="fixed inset-0 z-40 flex flex-col h-screen max-h-[100dvh] overflow-hidden bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100">
 	<div class="flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-50 dark:border-gray-850/50 shrink-0">
 		<div class="flex items-center gap-2 min-w-0">
 			<button
