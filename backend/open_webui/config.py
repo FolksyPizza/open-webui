@@ -3219,13 +3219,17 @@ ENABLE_WEB_SEARCH = PersistentConfig(
 WEB_SEARCH_ENGINE = PersistentConfig(
     'WEB_SEARCH_ENGINE',
     'rag.web.search.engine',
-    os.getenv('WEB_SEARCH_ENGINE', ''),
+    os.getenv('WEB_SEARCH_ENGINE', 'duckduckgo'),
 )
 
+# Default to bypassing the RAG embedding+retrieval round-trip on web
+# search results — for most models, feeding search hits directly is faster
+# and produces better answers than re-embedding them first. Admins can
+# switch this back off per-deployment.
 BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL = PersistentConfig(
     'BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL',
     'rag.web.search.bypass_embedding_and_retrieval',
-    os.getenv('BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL', 'False').lower() == 'true',
+    os.getenv('BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL', 'True').lower() == 'true',
 )
 
 
