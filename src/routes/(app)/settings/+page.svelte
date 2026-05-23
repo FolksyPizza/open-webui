@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getContext, onMount, tick } from 'svelte';
+	import { getContext, onDestroy, onMount, tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
-	import { config, models, settings, user } from '$lib/stores';
+	import { config, models, settings, showSidebar, user } from '$lib/stores';
 	import { updateUserSettings } from '$lib/apis/users';
 	import { getModels as _getModels } from '$lib/apis';
 
@@ -100,12 +100,21 @@
 		await goto(url.pathname + url.search, { replaceState: true, noScroll: true });
 	};
 
+	// Hide the chat sidebar while on /settings — Settings is a dedicated
+	// full-screen surface. Restore the user's prior state on leave.
+	let priorSidebar: boolean | undefined;
 	onMount(async () => {
+		priorSidebar = ($showSidebar as unknown) as boolean;
+		showSidebar.set(false);
+
 		const initial = $page.url.searchParams.get('tab');
 		if (initial && tabs.find((t) => t.id === initial)) {
 			selectedTab = initial;
 		}
 		await tick();
+	});
+	onDestroy(() => {
+		if (priorSidebar !== undefined) showSidebar.set(priorSidebar);
 	});
 </script>
 
