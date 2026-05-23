@@ -95,9 +95,11 @@
 		return {
 			memory: check('Memory', adminOn(cfg.enable_memories), permOn(perms.memories)),
 			web_search: check('Web search', adminOn(cfg.enable_web_search), permOn(perms.web_search)),
+			// Backend exposes both enable_code_execution and enable_code_interpreter;
+			// either being on is enough to allow the user-level capability.
 			code_execution_and_files: check(
 				'Code execution',
-				true, // no $config.features flag for code interpreter
+				adminOn(cfg.enable_code_interpreter) || adminOn(cfg.enable_code_execution),
 				permOn(perms.code_interpreter)
 			),
 			image_generation: check(
@@ -105,7 +107,7 @@
 				adminOn(cfg.enable_image_generation),
 				permOn(perms.image_generation)
 			),
-			calendar: check('Calendar', true, permOn(perms.calendar)),
+			calendar: check('Calendar', adminOn(cfg.enable_calendar), permOn(perms.calendar)),
 			canvas: { allowed: true }
 		};
 	})();

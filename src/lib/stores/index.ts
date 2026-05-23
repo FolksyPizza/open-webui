@@ -299,6 +299,10 @@ type Config = {
 		enable_autocomplete_generation: boolean;
 		enable_direct_connections: boolean;
 		enable_version_update_check: boolean;
+		enable_calendar?: boolean;
+		enable_automations?: boolean;
+		enable_code_execution?: boolean;
+		enable_code_interpreter?: boolean;
 		folder_max_file_count?: number;
 	};
 	oauth: {
