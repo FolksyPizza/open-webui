@@ -9,6 +9,7 @@
 	import Modal from '../common/Modal.svelte';
 	import Account from './Settings/Account.svelte';
 	import About from './Settings/About.svelte';
+	import Capabilities from './Settings/Capabilities.svelte';
 	import General from './Settings/General.svelte';
 	import Interface from './Settings/Interface.svelte';
 	import Audio from './Settings/Audio.svelte';
@@ -51,6 +52,29 @@
 	}
 
 	const allSettings: SettingsTab[] = [
+		{
+			id: 'capabilities',
+			title: 'Capabilities',
+			keywords: [
+				'capabilities',
+				'capability',
+				'tools',
+				'tool loading',
+				'toolloading',
+				'memory',
+				'web search',
+				'websearch',
+				'code execution',
+				'codeexecution',
+				'file creation',
+				'filecreation',
+				'image generation',
+				'imagegeneration',
+				'calendar',
+				'canvas',
+				'artifacts'
+			]
+		},
 		{
 			id: 'general',
 			title: 'General',
@@ -632,7 +656,31 @@
 				</div>
 				{#if filteredSettings.length > 0}
 					{#each filteredSettings as tabId (tabId)}
-						{#if tabId === 'general'}
+						{#if tabId === 'capabilities'}
+							<button
+								role="tab"
+								aria-controls="tab-capabilities"
+								aria-selected={selectedTab === 'capabilities'}
+								class={`px-0.5 md:px-2.5 py-1 min-w-fit rounded-xl flex-1 md:flex-none flex text-left transition
+								${
+									selectedTab === 'capabilities'
+										? ($settings?.highContrastMode ?? false)
+											? 'dark:bg-gray-800 bg-gray-200'
+											: ''
+										: ($settings?.highContrastMode ?? false)
+											? 'hover:bg-gray-200 dark:hover:bg-gray-800'
+											: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'
+								}`}
+								on:click={() => {
+									selectedTab = 'capabilities';
+								}}
+							>
+								<div class=" self-center mr-2">
+									<WrenchAlt strokeWidth="2" />
+								</div>
+								<div class=" self-center">{$i18n.t('Capabilities')}</div>
+							</button>
+						{:else if tabId === 'general'}
 							<button
 								role="tab"
 								aria-controls="tab-general"
@@ -882,7 +930,14 @@
 			<div
 				class="flex-1 px-3.5 md:pl-0 md:pr-4.5 md:min-h-[min(42rem,calc(100dvh-10rem))] max-h-[min(42rem,calc(100dvh-10rem))] overflow-y-auto"
 			>
-				{#if selectedTab === 'general'}
+				{#if selectedTab === 'capabilities'}
+					<Capabilities
+						saveSettings={async (updated) => {
+							await saveSettings(updated);
+							toast.success($i18n.t('Settings saved successfully!'));
+						}}
+					/>
+				{:else if selectedTab === 'general'}
 					<General
 						{getModels}
 						{saveSettings}
