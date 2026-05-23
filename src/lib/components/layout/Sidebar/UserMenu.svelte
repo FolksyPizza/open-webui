@@ -239,9 +239,7 @@
 				type="button"
 				on:click={async () => {
 					show = false;
-
-					await showSettings.set(true);
-
+					await goto('/settings');
 					if ($mobile) {
 						await tick();
 						showSidebar.set(false);

@@ -13,7 +13,6 @@
 	import Interface from '$lib/components/chat/Settings/Interface.svelte';
 	import Connections from '$lib/components/chat/Settings/Connections.svelte';
 	import Integrations from '$lib/components/chat/Settings/Integrations.svelte';
-	import Personalization from '$lib/components/chat/Settings/Personalization.svelte';
 	import Audio from '$lib/components/chat/Settings/Audio.svelte';
 	import DataControls from '$lib/components/chat/Settings/DataControls.svelte';
 	import Account from '$lib/components/chat/Settings/Account.svelte';
@@ -21,7 +20,6 @@
 
 	import WrenchAlt from '$lib/components/icons/WrenchAlt.svelte';
 	import SettingsAlt from '$lib/components/icons/SettingsAlt.svelte';
-	import Face from '$lib/components/icons/Face.svelte';
 	import Link from '$lib/components/icons/Link.svelte';
 	import AppNotification from '$lib/components/icons/AppNotification.svelte';
 	import SoundHigh from '$lib/components/icons/SoundHigh.svelte';
@@ -40,7 +38,6 @@
 	}
 
 	const tabs: Tab[] = [
-		{ id: 'capabilities', title: 'Capabilities', icon: WrenchAlt },
 		{ id: 'general', title: 'General', icon: SettingsAlt },
 		{
 			id: 'interface',
@@ -48,6 +45,7 @@
 			icon: AppNotification,
 			visible: () => $user?.role === 'admin' || ($user?.permissions?.settings?.interface ?? true)
 		},
+		{ id: 'capabilities', title: 'Capabilities', icon: WrenchAlt },
 		{
 			id: 'connections',
 			title: 'Connections',
@@ -62,14 +60,6 @@
 				$user?.role === 'admin' ||
 				($user?.role === 'user' && ($user?.permissions?.features?.direct_tool_servers ?? false))
 		},
-		{
-			id: 'personalization',
-			title: 'Personalization',
-			icon: Face,
-			visible: () =>
-				!!$config?.features?.enable_memories &&
-				($user?.role === 'admin' || ($user?.permissions?.features?.memories ?? true))
-		},
 		{ id: 'audio', title: 'Audio', icon: SoundHigh },
 		{ id: 'data_controls', title: 'Data Controls', icon: DatabaseSettings },
 		{ id: 'account', title: 'Account', icon: UserCircle },
@@ -78,7 +68,7 @@
 
 	$: visibleTabs = tabs.filter((t) => (t.visible ? t.visible() : true));
 
-	let selectedTab: string = 'capabilities';
+	let selectedTab: string = 'general';
 
 	const getModels = async () => {
 		return await _getModels(
@@ -87,10 +77,20 @@
 		);
 	};
 
+	// Silent saveSettings — no toast notifications on individual setting
+	// changes (toggles, inputs auto-save on change). The value still
+	// persists to the user record via updateUserSettings.
 	const saveSettings = async (updated: any) => {
 		await settings.set({ ...$settings, ...updated });
 		await models.set(await getModels());
 		await updateUserSettings(localStorage.token, { ui: $settings });
+	};
+
+	// Explicit-Save confirmation. Only fires when a tab's "Save" button is
+	// clicked (General / Interface / Audio dispatch a `save` event;
+	// Account uses a `saveHandler` callback). Per-toggle changes stay silent.
+	const savedToast = () => {
+		toast.success($i18n.t('Settings saved successfully!'));
 	};
 
 	const selectTab = async (id: string) => {
@@ -113,16 +113,29 @@
 	<title>{$i18n.t('Settings')} | Open WebUI</title>
 </svelte:head>
 
-<div class="fixed inset-0 z-40 flex flex-col h-screen max-h-[100dvh] overflow-hidden bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100">
-	<div class="flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-50 dark:border-gray-850/50 shrink-0">
+<div
+	class="fixed inset-0 z-40 flex flex-col h-screen max-h-[100dvh] overflow-hidden bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100"
+>
+	<div
+		class="flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-50 dark:border-gray-850/50 shrink-0"
+	>
 		<div class="flex items-center gap-2 min-w-0">
 			<button
 				class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-850 transition"
 				aria-label={$i18n.t('Back')}
 				on:click={() => goto('/')}
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-					<path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+					class="w-4 h-4"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+						clip-rule="evenodd"
+					/>
 				</svg>
 			</button>
 			<div class="text-lg font-medium truncate">{$i18n.t('Settings')}</div>
@@ -140,10 +153,12 @@
 		{/if}
 	</div>
 
-	<div class="flex flex-col md:flex-row flex-1 min-h-0 max-w-5xl w-full mx-auto px-3 md:px-6 py-4 gap-4">
+	<div
+		class="flex flex-col md:flex-row flex-1 min-h-0 w-full px-3 md:px-8 py-4 gap-6"
+	>
 		<nav
 			role="tablist"
-			class="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible md:overflow-y-auto gap-1 md:w-56 shrink-0 -mx-1 px-1 md:mx-0 md:px-0"
+			class="flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible md:overflow-y-auto gap-1 md:w-60 shrink-0 -mx-1 px-1 md:mx-0 md:px-0"
 		>
 			{#each visibleTabs as tab (tab.id)}
 				<button
@@ -171,44 +186,44 @@
 		<div
 			id="tabpanel-{selectedTab}"
 			role="tabpanel"
-			class="flex-1 min-h-0 overflow-y-auto pr-1"
+			class="settings-page flex-1 min-h-0 overflow-y-auto pr-1"
 		>
-			{#if selectedTab === 'capabilities'}
-				<Capabilities
-					saveSettings={async (updated) => {
-						await saveSettings(updated);
-						toast.success($i18n.t('Settings saved successfully!'));
-					}}
-				/>
-			{:else if selectedTab === 'general'}
-				<General {getModels} {saveSettings} on:save={() => toast.success($i18n.t('Settings saved successfully!'))} />
+			{#if selectedTab === 'general'}
+				<General {getModels} {saveSettings} on:save={savedToast} />
 			{:else if selectedTab === 'interface'}
-				<Interface {saveSettings} on:save={() => toast.success($i18n.t('Settings saved successfully!'))} />
+				<Interface {saveSettings} on:save={savedToast} />
+			{:else if selectedTab === 'capabilities'}
+				<Capabilities {saveSettings} />
 			{:else if selectedTab === 'connections'}
-				<Connections
-					saveSettings={async (updated) => {
-						await saveSettings(updated);
-						toast.success($i18n.t('Settings saved successfully!'));
-					}}
-				/>
+				<Connections {saveSettings} />
 			{:else if selectedTab === 'tools'}
-				<Integrations
-					saveSettings={async (updated) => {
-						await saveSettings(updated);
-						toast.success($i18n.t('Settings saved successfully!'));
-					}}
-				/>
-			{:else if selectedTab === 'personalization'}
-				<Personalization {saveSettings} on:save={() => toast.success($i18n.t('Settings saved successfully!'))} />
+				<Integrations {saveSettings} />
 			{:else if selectedTab === 'audio'}
-				<Audio {saveSettings} on:save={() => toast.success($i18n.t('Settings saved successfully!'))} />
+				<Audio {saveSettings} on:save={savedToast} />
 			{:else if selectedTab === 'data_controls'}
 				<DataControls {saveSettings} />
 			{:else if selectedTab === 'account'}
-				<Account {saveSettings} saveHandler={() => toast.success($i18n.t('Settings saved successfully!'))} />
+				<Account {saveSettings} saveHandler={savedToast} />
 			{:else if selectedTab === 'about'}
 				<About />
 			{/if}
 		</div>
 	</div>
 </div>
+
+<style>
+	/* Faint separators between rows for easier visual scanning.
+	   Targets the existing "py-0.5 + justify-between" row pattern used
+	   throughout the per-tab Settings components — no per-component edits
+	   needed. */
+	:global(.settings-page [class~='py-0.5'][class~='justify-between']) {
+		border-bottom: 1px solid rgb(229 231 235 / 0.7);
+		padding-block: 0.6rem;
+	}
+	:global(.dark .settings-page [class~='py-0.5'][class~='justify-between']) {
+		border-color: rgb(31 41 55 / 0.5);
+	}
+	:global(.settings-page h1) {
+		margin-top: 0.75rem;
+	}
+</style>

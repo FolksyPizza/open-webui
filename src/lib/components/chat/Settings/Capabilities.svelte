@@ -2,6 +2,7 @@
 	import { getContext, onMount } from 'svelte';
 	import { settings } from '$lib/stores';
 	import Switch from '$lib/components/common/Switch.svelte';
+	import ManageModal from './Personalization/ManageModal.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -66,11 +67,16 @@
 
 	let capabilities: Record<CapabilityKey, boolean> = { ...DEFAULTS };
 	let toolLoadingMode: ToolLoadingMode = 'auto';
+	let showManageMemory = false;
 
 	const persist = () => {
+		// Persist top-level capabilities map and a couple of legacy flags
+		// (settings.memory) so existing code paths keep working until Phase 2
+		// migrates them to read from settings.capabilities directly.
 		saveSettings({
 			capabilities: { ...capabilities },
-			toolLoadingMode
+			toolLoadingMode,
+			memory: capabilities.memory
 		});
 	};
 
@@ -81,26 +87,32 @@
 
 	onMount(() => {
 		const stored = ($settings as any)?.capabilities ?? {};
-		capabilities = { ...DEFAULTS, ...stored };
+		capabilities = {
+			...DEFAULTS,
+			...stored,
+			memory: stored.memory ?? ($settings as any)?.memory ?? DEFAULTS.memory
+		};
 		toolLoadingMode = ($settings as any)?.toolLoadingMode ?? 'auto';
 	});
 </script>
 
-<div class="flex flex-col h-full justify-between text-sm">
-	<div class="overflow-y-scroll max-h-[28rem] lg:max-h-full pr-1.5">
-		<div>
-			<div class=" mb-1 text-sm font-medium">{$i18n.t('Capabilities')}</div>
+<ManageModal bind:show={showManageMemory} />
 
-			<div class=" mb-3 text-xs text-gray-500">
+<div class="flex flex-col h-full text-sm">
+	<div class="overflow-y-auto pr-1.5">
+		<div>
+			<h1 class="mb-1 text-sm font-medium">{$i18n.t('Capabilities')}</h1>
+
+			<div class="mb-3 text-xs text-gray-500">
 				{$i18n.t(
 					'Turn capabilities on to let models invoke them automatically when useful. You can still override per-chat from the + menu in any chat.'
 				)}
 			</div>
 
-			<div class="flex flex-col gap-1.5">
+			<div class="flex flex-col">
 				{#each ITEMS as item (item.key)}
-					<div class="py-1 border-b border-gray-50 dark:border-gray-850/50 last:border-b-0">
-						<div class="flex w-full justify-between items-start gap-3">
+					<div>
+						<div class="py-0.5 flex w-full justify-between gap-3 items-start">
 							<div class="flex-1 min-w-0">
 								<div id="cap-{item.key}-label" class="text-xs font-medium">
 									{$i18n.t(item.title)}
@@ -108,6 +120,18 @@
 								<div class="text-xs text-gray-500 mt-0.5">
 									{$i18n.t(item.description)}
 								</div>
+
+								{#if item.key === 'memory' && capabilities.memory}
+									<div class="mt-2">
+										<button
+											type="button"
+											class="px-3 py-1 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/5 outline outline-1 outline-gray-200 dark:outline-gray-800 rounded-full"
+											on:click={() => (showManageMemory = true)}
+										>
+											{$i18n.t('Manage memories')}
+										</button>
+									</div>
+								{/if}
 							</div>
 
 							<div class="flex items-center gap-2 p-1 shrink-0">
@@ -125,10 +149,10 @@
 		</div>
 
 		<div class="mt-5">
-			<div class=" mb-1 text-sm font-medium">{$i18n.t('Advanced')}</div>
+			<h1 class="mb-1 text-sm font-medium">{$i18n.t('Advanced')}</h1>
 
-			<div class="py-1">
-				<div class="flex w-full justify-between items-start gap-3">
+			<div>
+				<div class="py-0.5 flex w-full justify-between gap-3 items-start flex-col sm:flex-row">
 					<div class="flex-1 min-w-0">
 						<div id="tool-loading-mode-label" class="text-xs font-medium">
 							{$i18n.t('Tool loading mode')}
@@ -140,10 +164,10 @@
 						</div>
 					</div>
 
-					<div class="flex items-center gap-2 p-1 shrink-0">
+					<div class="flex items-center gap-2 p-1 shrink-0 self-stretch sm:self-start">
 						<select
 							aria-labelledby="tool-loading-mode-label"
-							class="text-xs bg-transparent outline-hidden border border-gray-100 dark:border-gray-850 rounded-lg py-1 px-2"
+							class="text-xs bg-transparent outline-hidden border border-gray-100 dark:border-gray-800 rounded-lg py-1 px-2 min-w-[10rem]"
 							bind:value={toolLoadingMode}
 							on:change={persist}
 						>
