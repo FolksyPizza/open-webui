@@ -257,26 +257,37 @@ select {
 }
 
 /* Settings surfaces (/settings and /admin/settings) — faint row
-   separators on each setting row. Targets the common row patterns used
-   across user and admin Settings components so no per-component edits
-   are needed:
-   - py-0.5  + justify-between  (user-side rows)
-   - mb-2.5  + justify-between  (admin-side rows)
-   - py-1    + justify-between  (a few admin rows)
-   The selector intentionally requires `justify-between` so we don't
-   stripe section headers, helper text, or button rows. */
-.settings-page [class~='py-0.5'][class~='justify-between'],
-.settings-page [class~='mb-2.5'][class~='justify-between'],
-.settings-page [class~='py-1'][class~='justify-between'] {
+   separators on each setting row.
+
+   Strategy: match any `justify-between` flex row inside .settings-page
+   that contains an interactive control (Switch, select, text/number
+   input). Using :has() to detect the control means we don't have to
+   enumerate every Tailwind class combination the per-tab Settings
+   components use — they're heterogeneous (py-0.5, mb-2.5, mb-2,
+   pt-0.5, no spacing class at all, etc.) and adding them one-by-one
+   wouldn't scale.
+
+   :has() ships in all evergreen browsers (Safari 15.4+, Chrome 105+,
+   Firefox 121+). */
+.settings-page [class*='justify-between']:has(> div [role='switch']),
+.settings-page [class*='justify-between']:has([role='switch']),
+.settings-page [class*='justify-between']:has(> select),
+.settings-page [class*='justify-between']:has(> div > select),
+.settings-page [class*='justify-between']:has(> input),
+.settings-page [class*='justify-between']:has(> div > input) {
 	border-bottom: 1px solid rgb(229 231 235 / 0.7);
 	padding-block: 0.6rem;
 	margin-bottom: 0 !important;
 }
-.dark .settings-page [class~='py-0.5'][class~='justify-between'],
-.dark .settings-page [class~='mb-2.5'][class~='justify-between'],
-.dark .settings-page [class~='py-1'][class~='justify-between'] {
+.dark .settings-page [class*='justify-between']:has(> div [role='switch']),
+.dark .settings-page [class*='justify-between']:has([role='switch']),
+.dark .settings-page [class*='justify-between']:has(> select),
+.dark .settings-page [class*='justify-between']:has(> div > select),
+.dark .settings-page [class*='justify-between']:has(> input),
+.dark .settings-page [class*='justify-between']:has(> div > input) {
 	border-color: rgb(31 41 55 / 0.5);
 }
+
 .settings-page h1 {
 	margin-top: 0.75rem;
 }

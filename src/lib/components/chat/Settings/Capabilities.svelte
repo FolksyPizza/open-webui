@@ -73,18 +73,19 @@
 	$: availability = ((): Record<CapabilityKey, { allowed: boolean; reason?: string }> => {
 		const perms = ($user as any)?.permissions?.features ?? {};
 		const cfg = $config?.features ?? ({} as any);
-		const isAdmin = $user?.role === 'admin';
 		const adminOn = (v: any) => v === undefined || !!v;
 		const permOn = (v: any) => v === undefined || !!v;
 
+		// Note: admins see the same gating as users so the UI accurately
+		// reflects what's available system-wide. Admins still have full
+		// access — they can flip the gate in /admin/settings to unblock it.
 		const check = (
 			feature: string,
 			adminFlag: boolean,
 			permFlag: boolean
 		): { allowed: boolean; reason?: string } => {
-			if (isAdmin) return { allowed: true };
 			if (!adminFlag) {
-				return { allowed: false, reason: `${feature} is disabled by your admin.` };
+				return { allowed: false, reason: `${feature} is disabled in the admin panel.` };
 			}
 			if (!permFlag) {
 				return { allowed: false, reason: `${feature} isn't enabled for your account.` };
