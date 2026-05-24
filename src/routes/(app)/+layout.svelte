@@ -363,6 +363,19 @@
 
 		await tick();
 
+		// First-run admin onboarding: send the freshly-signed-up admin to
+		// the setup wizard. Once they finish (or skip), the
+		// `adminOnboardingCompleted` flag is set on their user settings
+		// so this doesn't fire again. Anyone explicitly visiting /admin/*
+		// is already trying to administer the install — leave them alone.
+		if (
+			$user?.role === 'admin' &&
+			!($settings as any)?.adminOnboardingCompleted &&
+			!$page.url.pathname.startsWith('/admin')
+		) {
+			await goto('/admin/onboarding');
+		}
+
 		loaded = true;
 	});
 
